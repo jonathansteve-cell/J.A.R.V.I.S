@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>J.A.R.V.I.S - AI Assistant Control Panel</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Main Orb Visualization -->
+        <div class="visualization-area">
+            <canvas id="orbCanvas"></canvas>
+            
+            <!-- Status Display -->
+            <div class="status-display">
+                <div class="status-item">
+                    <span class="status-label">Status:</span>
+                    <span class="status-value" id="statusValue">STANDBY</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Listening:</span>
+                    <span class="status-value" id="listeningValue">OFF</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Processing:</span>
+                    <span class="status-value" id="processingValue">IDLE</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Control Panel -->
+        <div class="control-panel">
+            <!-- Microphone Section -->
+            <div class="control-section">
+                <h2>Voice Command</h2>
+                <button id="micButton" class="mic-button">
+                    <span class="mic-icon">🎤</span>
+                    <span class="mic-text">Click to Listen</span>
+                </button>
+                <div class="recognition-text" id="recognitionText">Awaiting voice input...</div>
+            </div>
+
+            <!-- Response Display -->
+            <div class="control-section">
+                <h2>J.A.R.V.I.S Response</h2>
+                <div class="response-display" id="responseDisplay">
+                    <p>Good day, SIR. J.A.R.V.I.S online and ready for your commands.</p>
+                </div>
+            </div>
+
+            <!-- Command History -->
+            <div class="control-section">
+                <h2>Command History</h2>
+                <div class="command-history" id="commandHistory">
+                    <div class="history-item">System initialized</div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="control-section">
+                <h2>Quick Actions</h2>
+                <div class="quick-actions">
+                    <button class="action-btn" onclick="quickAction('open chrome')">Chrome</button>
+                    <button class="action-btn" onclick="quickAction('system info')">System Info</button>
+                    <button class="action-btn" onclick="quickAction('open notepad')">Notepad</button>
+                    <button class="action-btn" onclick="quickAction('open file manager')">Files</button>
+                </div>
+            </div>
+
+            <!-- Settings -->
+            <div class="control-section">
+                <h2>Settings</h2>
+                <div class="settings-group">
+                    <label>
+                        Voice Volume:
+                        <input type="range" id="volumeControl" min="0" max="100" value="70">
+                    </label>
+                    <label>
+                        Speech Rate:
+                        <input type="range" id="rateControl" min="0.5" max="2" step="0.1" value="1">
+                    </label>
+                    <label>
+                        <input type="checkbox" id="autoListenCheck" checked>
+                        Auto Listen Mode
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- WebSocket Connection Status -->
+    <div class="connection-status" id="connectionStatus">
+        <span class="status-dot"></span>
+        <span id="connectionText">Connecting...</span>
+    </div>
+
+    <script src="orb-visualization.js"></script>
+    <script src="voice-control.js"></script>
+    <script src="websocket-client.js"></script>
+</body>
+</html>
