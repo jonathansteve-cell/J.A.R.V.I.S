@@ -236,3 +236,106 @@ class JARVISOrb {
 window.addEventListener('load', () => {
     new JARVISOrb();
 });
+
+const recognition = 'SpeechRecognition' in window
+    ? new SpeechRecognition()
+    : ('webkitSpeechRecognition' in window ? new webkitSpeechRecognition() : null);
+let listening = false;
+
+function setStatus(status, listeningState, processing) {
+    document.getElementById('statusValue').textContent = status;
+    document.getElementById('listeningValue').textContent = listeningState;
+    document.getElementById('processingValue').textContent = processing;
+}
+
+function addHistory(command, response) {
+    const item = document.createElement('div');
+    item.className = 'history-item';
+    item.textContent = `${command} -> ${response}`;
+    document.getElementById('commandHistory').prepend(item);
+}
+
+function speak(response) {
+    if (!('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(response);
+    utterance.volume = Number(document.getElementById('volumeControl').value) / 100;
+    utterance.rate = Number(document.getElementById('rateControl').value);
+    window.speechSynthesis.speak(utterance);
+}
+
+async function sendCommand(command) {
+    if (!command) return;
+    setStatus('PROCESSING', 'OFF', 'WORKING');
+    document.getElementById('recognitionText').textContent = command;
+    try {
+        const response = await fetch('/api/command', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ command }),
+        });
+        const payload = await response.json();
+        if (!response.ok) throw new Error(payload.error || 'Command failed.');
+        document.getElementById('responseDisplay').innerHTML = `<p>${payload.response}</p>`;
+        addHistory(command, payload.response);
+        speak(payload.response);
+        setStatus('STANDBY', 'OFF', 'IDLE');
+    } catch (error) {
+        document.getElementById('responseDisplay').innerHTML = `<p>${error.message}</p>`;
+        setStatus('ERROR', 'OFF', 'IDLE');
+    }
+}
+
+function quickAction(command) {
+    sendCommand(command);
+}
+
+function stopListening() {
+    if (recognition && listening) recognition.stop();
+    listening = false;
+    document.getElementById('micButton').classList.remove('active');
+    document.querySelector('.mic-text').textContent = 'Click to Listen';
+    setStatus('STANDBY', 'OFF', 'IDLE');
+}
+
+if (recognition) {
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.lang = 'en-US';
+    recognition.onstart = () => {
+        listening = true;
+        document.getElementById('micButton').classList.add('active');
+        document.querySelector('.mic-text').textContent = 'Listening...';
+        setStatus('LISTENING', 'ON', 'IDLE');
+    };
+    recognition.onresult = (event) => {
+        const transcript = Array.from(event.results).map((result) => result[0].transcript).join('');
+        document.getElementById('recognitionText').textContent = transcript;
+        if (event.results[event.results.length - 1].isFinal) sendCommand(transcript);
+    };
+    recognition.onerror = (event) => {
+        document.getElementById('recognitionText').textContent = `Microphone error: ${event.error}`;
+        stopListening();
+    };
+    recognition.onend = stopListening;
+} else {
+    document.getElementById('recognitionText').textContent = 'Speech recognition is unavailable in this browser.';
+}
+
+document.getElementById('micButton').addEventListener('click', () => {
+    if (!recognition) return;
+    if (listening) stopListening();
+    else recognition.start();
+});
+
+const socket = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws`);
+socket.onopen = () => {
+    document.getElementById('connectionText').textContent = 'Connected';
+};
+socket.onclose = () => {
+    document.getElementById('connectionText').textContent = 'Offline';
+};
+socket.onmessage = ({ data }) => {
+    const message = JSON.parse(data);
+    if (message.type === 'activity' && message.state === 'processing') setStatus('PROCESSING', 'OFF', 'WORKING');
+};
